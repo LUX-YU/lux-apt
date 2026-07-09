@@ -47,7 +47,7 @@ jobs:
       - name: Install tooling
         run: |
           sudo apt-get update
-          sudo apt-get install -y aptly dpkg-dev gnupg cmake git curl ca-certificates
+          sudo apt-get install -y aptly dpkg-dev gnupg cmake git curl ca-certificates libvulkan-dev
 
       - name: Build third-party .debs (concurrentqueue, stduuid)
         run: bash scripts/build-thirdparty-debs.sh "$PWD/pool"

@@ -79,5 +79,11 @@ Description: sol2 (header-only C++/Lua binding, repackaged for the LUX apt repo)
 EOF
 dpkg-deb --root-owner-group -Zxz --build "$sol2_stage" "$POOL/sol2_3.5.0_all.deb"
 
+# --- VulkanMemoryAllocator (header-only, but ships a CMake config target, so use
+# its own install rather than a bare header copy). Not packaged for jammy. Its
+# config references Vulkan::Vulkan, so the publish runner needs libvulkan-dev. ---
+git clone --depth 1 --branch v3.1.0 https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator "$WORK/vma"
+build_deb vulkanmemoryallocator 3.1.0 "$WORK/vma" ""
+
 echo "Built third-party .debs:"
 ls -1 "$POOL"
