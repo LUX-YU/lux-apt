@@ -22,8 +22,13 @@ build_deb() {
   local name="$1" ver="$2" src="$3" extra="$4"
   local stage="$WORK/${name}-stage"
   rm -rf "$stage"
+  # CMAKE_INSTALL_LIBDIR=lib keeps these arch:all packages on arch-neutral paths.
+  # GNUInstallDirs would otherwise pick lib/x86_64-linux-gnu on the amd64 builder,
+  # so the installed CMake config would sit in an amd64-only path and
+  # find_package() would fail on arm64 (the .deb is arch:all, shared by both).
   # shellcheck disable=SC2086
-  cmake -S "$src" -B "$WORK/${name}-build" -DCMAKE_INSTALL_PREFIX=/usr $extra >/dev/null
+  cmake -S "$src" -B "$WORK/${name}-build" \
+    -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_INSTALL_LIBDIR=lib $extra >/dev/null
   DESTDIR="$stage" cmake --install "$WORK/${name}-build" >/dev/null
   mkdir -p "$stage/DEBIAN"
   cat > "$stage/DEBIAN/control" <<EOF
