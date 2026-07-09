@@ -37,7 +37,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     env:
-      LUX_REPOS: "lux-cmake-toolset lux-cxx lux-communication lux-dataset imgui"
+      LUX_REPOS: "lux-cmake-toolset lux-cxx lux-communication lux-dataset imgui lux-engine"
       APT_DIST: jammy
       APT_COMP: main
       APT_ARCHS: amd64,arm64
