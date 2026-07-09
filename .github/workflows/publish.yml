@@ -1,0 +1,103 @@
+name: publish
+
+# Builds the signed LUX apt repository and deploys it to GitHub Pages.
+#
+# .deb sources:
+#   - third-party header-only deps (concurrentqueue, stduuid) built here as arch:all
+#   - the latest GitHub Release assets of each LUX package repo (public repos)
+# The aptly DB is recreated from scratch every run, so the runner keeps no state —
+# the Release assets + freshly built third-party debs are the source of truth. Re-run
+# this workflow after any package publishes a new release to refresh the repo.
+#
+# One-time setup:
+#   1. Settings > Pages > Source = "GitHub Actions".
+#   2. Create a *passphrase-less* GPG key for signing (simplest for CI), then add
+#      its ASCII-armored private key as the secret GPG_PRIVATE_KEY. (If the key has
+#      a passphrase, also set GPG_PASSPHRASE.) The public key is exported into the
+#      published site as lux-archive-keyring.asc automatically.
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [publish]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-22.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    env:
+      LUX_REPOS: "lux-cmake-toolset lux-cxx lux-communication lux-dataset"
+      APT_DIST: jammy
+      APT_COMP: main
+      APT_ARCHS: amd64,arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y aptly dpkg-dev gnupg cmake git curl ca-certificates
+
+      - name: Build third-party .debs (concurrentqueue, stduuid)
+        run: bash scripts/build-thirdparty-debs.sh "$PWD/pool"
+
+      - name: Download LUX release .debs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p pool
+          for repo in $LUX_REPOS; do
+            echo "== LUX-YU/$repo =="
+            gh release download --repo "LUX-YU/$repo" --pattern '*.deb' --dir pool --clobber \
+              || echo "  (no release yet for $repo — skipping)"
+          done
+          echo "Collected packages:"; ls -1 pool
+
+      - name: Import GPG signing key
+        id: gpg
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          printf '%s\n' "$GPG_PRIVATE_KEY" | gpg --batch --import
+          KEYID=$(gpg --list-secret-keys --with-colons | awk -F: '/^sec:/{print $5; exit}')
+          echo "keyid=$KEYID" >> "$GITHUB_OUTPUT"
+          mkdir -p ~/.gnupg
+          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+          gpgconf --kill gpg-agent || true
+          gpg --batch --yes --armor --export "$KEYID" > lux-archive-keyring.asc
+
+      - name: Build & sign apt repo (aptly)
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          aptly repo create -distribution="$APT_DIST" -component="$APT_COMP" lux
+          aptly repo add lux pool
+          PASS_ARG=""
+          [ -n "$GPG_PASSPHRASE" ] && PASS_ARG="-passphrase=$GPG_PASSPHRASE"
+          aptly publish repo -batch -architectures="$APT_ARCHS" \
+            -gpg-key="${{ steps.gpg.outputs.keyid }}" $PASS_ARG lux
+
+      - name: Assemble site
+        run: |
+          mkdir -p site
+          cp -r ~/.aptly/public/* site/
+          cp lux-archive-keyring.asc site/
+          cp README.md site/ 2>/dev/null || true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
