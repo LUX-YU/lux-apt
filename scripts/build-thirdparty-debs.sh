@@ -35,7 +35,9 @@ Section: libdevel
 Priority: optional
 Description: ${name} (header-only third-party lib, repackaged for the LUX apt repo)
 EOF
-  dpkg-deb --root-owner-group --build "$stage" "$POOL/${name}_${ver}_all.deb"
+  # -Zxz: Ubuntu 22.04's dpkg-deb defaults to zstd (control.tar.zst), which the
+  # aptly shipped in 22.04 cannot read. xz is understood by every aptly version.
+  dpkg-deb --root-owner-group -Zxz --build "$stage" "$POOL/${name}_${ver}_all.deb"
 }
 
 # --- concurrentqueue (moodycamel) ---
