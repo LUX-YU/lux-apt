@@ -64,20 +64,20 @@ build_deb entt 3.13.2 "$WORK/entt" "-DENTT_INSTALL=ON"
 # --- sol2 (header-only C++/Lua binding; not in jammy). lux-engine consumes it via
 # find_path("sol/abort.hpp"), so only the header tree is needed — no CMake config,
 # and no need to build its Lua-dependent tests/examples. Just ship the includes. ---
-git clone --depth 1 --branch v3.3.0 https://github.com/ThePhD/sol2 "$WORK/sol2"
+git clone --depth 1 --branch v3.5.0 https://github.com/ThePhD/sol2 "$WORK/sol2"
 sol2_stage="$WORK/sol2-stage"
 mkdir -p "$sol2_stage/usr/include" "$sol2_stage/DEBIAN"
 cp -r "$WORK/sol2/include/." "$sol2_stage/usr/include/"
 cat > "$sol2_stage/DEBIAN/control" <<EOF
 Package: sol2
-Version: 3.3.0
+Version: 3.5.0
 Architecture: all
 Maintainer: ${MAINT}
 Section: libdevel
 Priority: optional
 Description: sol2 (header-only C++/Lua binding, repackaged for the LUX apt repo)
 EOF
-dpkg-deb --root-owner-group -Zxz --build "$sol2_stage" "$POOL/sol2_3.3.0_all.deb"
+dpkg-deb --root-owner-group -Zxz --build "$sol2_stage" "$POOL/sol2_3.5.0_all.deb"
 
 echo "Built third-party .debs:"
 ls -1 "$POOL"
