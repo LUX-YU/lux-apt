@@ -55,5 +55,11 @@ build_deb concurrentqueue 1.0.4 "$WORK/concurrentqueue" ""
 git clone --depth 1 --branch v1.2.3 https://github.com/mariusbancila/stduuid "$WORK/stduuid"
 build_deb stduuid 1.2.3 "$WORK/stduuid" "-DUUID_BUILD_TESTS=OFF -DUUID_USING_CXX20_SPAN=ON -DUUID_SYSTEM_GENERATOR=OFF"
 
+# --- EnTT (header-only ECS; not packaged in Ubuntu jammy) ---
+# ENTT_INSTALL=ON is required for EnTT to install its headers + EnTTConfig.cmake
+# (target EnTT::EnTT). find_package(EnTT CONFIG) then resolves on the target box.
+git clone --depth 1 --branch v3.13.2 https://github.com/skypjack/entt "$WORK/entt"
+build_deb entt 3.13.2 "$WORK/entt" "-DENTT_INSTALL=ON"
+
 echo "Built third-party .debs:"
 ls -1 "$POOL"
