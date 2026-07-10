@@ -85,5 +85,16 @@ dpkg-deb --root-owner-group -Zxz --build "$sol2_stage" "$POOL/sol2_3.5.0_all.deb
 git clone --depth 1 --branch v3.1.0 https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator "$WORK/vma"
 build_deb vulkanmemoryallocator 3.1.0 "$WORK/vma" ""
 
+# --- tomlplusplus (header-only TOML parser; not in jammy). Ships a CMake config
+# (target tomlplusplus::tomlplusplus). ---
+git clone --depth 1 --branch v3.4.0 https://github.com/marzer/tomlplusplus "$WORK/tomlplusplus"
+build_deb tomlplusplus 3.4.0 "$WORK/tomlplusplus" ""
+
+# --- stdexec (NVIDIA senders/receivers; header-only, not in jammy). Bleeding-edge,
+# so its config checks need a newer compiler → g++-12. No formal release tags; pin
+# main. Installs stdexec-config.cmake (target STDEXEC::stdexec). ---
+git clone --depth 1 https://github.com/NVIDIA/stdexec "$WORK/stdexec"
+build_deb stdexec 0.0.0 "$WORK/stdexec" "-DCMAKE_CXX_COMPILER=g++-12 -DSTDEXEC_BUILD_EXAMPLES=OFF -DSTDEXEC_BUILD_TESTS=OFF"
+
 echo "Built third-party .debs:"
 ls -1 "$POOL"

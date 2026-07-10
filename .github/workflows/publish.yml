@@ -37,7 +37,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     env:
-      LUX_REPOS: "lux-cmake-toolset lux-cxx lux-communication lux-dataset imgui lux-engine"
+      LUX_REPOS: "lux-cmake-toolset lux-cxx lux-communication lux-dataset imgui imgui-node-editor lux-engine"
       APT_DIST: jammy
       APT_COMP: main
       APT_ARCHS: amd64,arm64
@@ -47,7 +47,7 @@ jobs:
       - name: Install tooling
         run: |
           sudo apt-get update
-          sudo apt-get install -y aptly dpkg-dev gnupg cmake git curl ca-certificates libvulkan-dev
+          sudo apt-get install -y aptly dpkg-dev gnupg cmake git curl ca-certificates libvulkan-dev g++-12
 
       - name: Build third-party .debs (concurrentqueue, stduuid)
         run: bash scripts/build-thirdparty-debs.sh "$PWD/pool"
